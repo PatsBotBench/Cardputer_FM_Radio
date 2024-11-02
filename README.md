@@ -1,95 +1,257 @@
-# Cardputer_FM
+/*
+ * FM Radio Controller for M5Cardputer
+ * Author: [PatsBotBench]
+ * License: MIT
+ * 
+ * This software is provided "as is," without any warranty, express or implied.
+ * Users assume all responsibility for using and modifying this code.
+ */
 
-M5 Cardputer FM Radio
-This program allows the M5Cardputer to control a TEA5767 FM receiver over I2C, providing on-screen frequency display, signal strength, and mono/stereo indicators. The user can navigate through scanned stations, switch to saved stations, and fine-tune the frequency. Output of the TEA5767 radio module can be sent to a powered/amplified speaker or headphones.
+#include <Wire.h>
+#include <SD.h>
+#include <TEA5767.h>
+#include <M5Cardputer.h>
 
-Essentials
+TEA5767 radio = TEA5767();
 
-The user can navigate through scanned stations, switch to saved stations, and fine-tune the frequency. Saved stations are kept in a file on the TF card called RadioSta.TXT. The file is required for intended operations.
+enum RadioMode { SCANNED, SAVED };
+const RadioMode startupMode = SCANNED;
+RadioMode currentMode = startupMode;
 
-Pin Mapping:
-I2C Configuration: The TEA5767 module is connected to the M5Cardputer via the Grove port.
-Pin Assignments:
-SDA: G2
-SCL: G1
+const int maxStationNameLength = 20;
+double frequency = 87.50;
+double topFrequency = 108.00;
+double intervalFreq = 0.1;
+int stationIndex = 0;
+int stationCount = 0;
+double stationFrequencies[100];
+String stationNames[100];
 
-Key Functions:
-m: Cycle between modes (Scanned Stations and Saved Stations).
-/: Tune to the next saved or scanned station up the frequency band.
-,: Tune to the previous saved or scanned station down the frequency band.
-OK/Enter (LF key): Confirm selection of the new station after using tune keys
-.: Fine-tune the frequency down by 0.1 MHz.
-;: Fine-tune the frequency up by 0.1 MHz.
-s: Rescan frequencies in Scanned Stations mode (ignored in Saved Stations mode).
+short minSignalLevel = 9;
+unsigned long scanDelay = 100;
+unsigned long lastScanTime = 0;
+unsigned long lastKeyPressTime = 0;
+const unsigned long debounceDelay = 200;
+const char* stationsFile = "/RadioSta.txt";
 
-Display Indicators:
-Signal Strength: Displays the signal strength as a percentage, colored yellow for < 60% and green for ≥ 60%.
-Stereo/Mono Indicator: Shows “Ster” in green for stereo signals and “Mono” in white for mono signals.
-Frequency: Displays the current frequency in MHz.
-Station Name: For saved stations, the station name displays at the bottom of the screen. In scanned mode, this area remains blank.
+bool displaySignalStrength = true;
+bool displayStereoStatus = true;
+unsigned long statusUpdateInterval = 120000;
+unsigned long lastStatusUpdate = 0;
 
-Configuration Variables
+bool showMessage = false;
 
-startupMode (RadioMode):
-Type: RadioMode enum (SCANNED or SAVED)
-Purpose: Sets the initial mode of the radio at startup.
-Default Value: SAVED
+void setup() {
+  Wire.begin(2, 1);
 
-maxStationNameLength:
-Type: int
-Purpose: Limits the number of characters displayed for a station name. Helps maintain a consistent display.
-Default Value: 20
+  auto cfg = M5.config();
+  M5Cardputer.begin(cfg, true);
+  M5Cardputer.Display.setRotation(1);
+  M5Cardputer.Display.clear();
+  M5Cardputer.Display.setTextSize(2);
 
-frequency:
-Type: double
-Purpose: Represents the starting frequency or the current frequency being tuned.
-Default Value: 87.50 (MHz, typically the lower bound of the FM band)
+  if (!SD.begin()) {
+    M5Cardputer.Display.println("SD Card initialization failed!");
+    return;
+  }
 
-topFrequency:
-Type: double
-Purpose: Sets the upper frequency limit for FM scanning.
-Default Value: 108.00 (MHz, typically the upper bound of the FM band)
+  displayMode();
+  if (currentMode == SCANNED) {
+    prescanStations();
+  } else {
+    loadSavedStations();
+  }
 
-intervalFreq:
-Type: double
-Purpose: Frequency step for tuning and scanning.
-Default Value: 0.1 (MHz, common FM frequency increment)
+  if (stationCount > 0) {
+    stationIndex = 0;
+    frequency = stationFrequencies[stationIndex];
+    setStation();
+  } else {
+    M5Cardputer.Display.setCursor(0, 20);
+    M5Cardputer.Display.print("No stations found");
+  }
+}
 
-minSignalLevel:
-Type: short
-Purpose: Sets the minimum signal strength required to consider a station valid during scanning.
-Default Value: 9 (on a scale where higher values represent stronger signals)
+void loop() {
+  M5Cardputer.update();
 
-scanDelay:
-Type: unsigned long
-Purpose: Determines the delay between frequency steps during the scanning process.
-Default Value: 100 (milliseconds)
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastKeyPressTime >= debounceDelay) {
+    if (M5Cardputer.Keyboard.isChange()) {
+      lastKeyPressTime = currentMillis;
 
-debounceDelay:
-Type: const unsigned long
-Purpose: Debounce delay to prevent multiple key presses being registered.
-Default Value: 200 (milliseconds)
+      if (M5Cardputer.Keyboard.isKeyPressed('m')) {
+        cycleMode();
+      } else if (M5Cardputer.Keyboard.isKeyPressed('/')) {
+        handleKeyPress('/');
+      } else if (M5Cardputer.Keyboard.isKeyPressed(',')) {
+        handleKeyPress(',');
+      } else if (M5Cardputer.Keyboard.isKeyPressed(0x28)) {
+        if (showMessage) {
+          clearMessage();
+        } else {
+          setStation();
+        }
+      } else if (M5Cardputer.Keyboard.isKeyPressed('s') && currentMode == SCANNED) {
+        prescanStations();
+      }
+    }
+  }
 
-statusUpdateInterval:
-Type: unsigned long
-Purpose: Sets the interval for updating the signal strength and stereo status display.
-Default Value: 120000 (milliseconds or 120 seconds)
+  if ((currentMillis - lastStatusUpdate >= statusUpdateInterval) && (displaySignalStrength || displayStereoStatus)) {
+    lastStatusUpdate = currentMillis;
+    displayStationInfo();
+  }
 
-stationsFile:
-Type: const char*
-Purpose: File path on the SD card for loading/saving station lists.
-Default Value: "/RadioSta.txt"
+  delay(200);
+}
 
-displaySignalStrength:
-Type: bool
-Purpose: Toggles display of signal strength percentage on the screen.
-Default Value: true
+void displayMode() {
+  M5Cardputer.Display.setCursor(0, 0);
+  M5Cardputer.Display.fillRect(0, 0, 320, 20, BLACK);
+  M5Cardputer.Display.setTextSize(2);
 
-displayStereoStatus:
-Type: bool
-Purpose: Toggles display of stereo/mono indicator on the screen.
-Default Value: true
+  switch (currentMode) {
+    case SCANNED:
+      M5Cardputer.Display.print("Scanned Stations");
+      break;
+    case SAVED:
+      M5Cardputer.Display.print("Saved Stations");
+      break;
+  }
+}
 
-Futures
-1) Ability to save current scanned station
-2) Use Wifi and also display time and/or Weather.
+void cycleMode() {
+  currentMode = (currentMode == SCANNED) ? SAVED : SCANNED;
+  displayMode();
+
+  if (currentMode == SCANNED) {
+    prescanStations();
+  } else {
+    loadSavedStations();
+  }
+  displayStationInfo();
+}
+
+void loadSavedStations() {
+  stationCount = 0;
+  File file = SD.open(stationsFile);
+  if (!file) return;
+
+  while (file.available() && stationCount < 100) {
+    String line = file.readStringUntil('\n');
+    int commaIndex = line.indexOf(',');
+    if (commaIndex > 0) {
+      frequency = line.substring(0, commaIndex).toFloat();
+      String name = line.substring(commaIndex + 1);
+      if (frequency >= 87.5 && frequency <= 108.0) {
+        stationFrequencies[stationCount] = frequency;
+        stationNames[stationCount] = name.length() > maxStationNameLength ? name.substring(0, maxStationNameLength) : name;
+        stationCount++;
+      }
+    }
+  }
+  file.close();
+  stationIndex = 0;
+  frequency = stationFrequencies[stationIndex];
+}
+
+void prescanStations() {
+  M5Cardputer.Display.fillRect(0, 20, 320, 200, BLACK);
+  M5Cardputer.Display.setCursor(0, 20);
+  M5Cardputer.Display.print("Scanning...");
+
+  frequency = 87.50;
+  stationCount = 0;
+
+  while (frequency <= topFrequency) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastScanTime >= scanDelay) {
+      lastScanTime = currentMillis;
+      radio.setFrequency(frequency);
+
+      if (radio.getSignalLevel() >= minSignalLevel) {
+        stationFrequencies[stationCount] = frequency;
+        stationCount++;
+        if (stationCount >= 100) break;
+      }
+      frequency += intervalFreq;
+    }
+  }
+
+  M5Cardputer.Display.fillRect(0, 20, 320, 200, BLACK);
+  M5Cardputer.Display.setCursor(0, 20);
+  M5Cardputer.Display.printf("Found %d stations\n", stationCount);
+  delay(1000);
+}
+
+void handleKeyPress(char key) {
+  if (stationCount > 0) {
+    if (key == '/') {
+      stationIndex = (stationIndex + 1) % stationCount;
+    } else if (key == ',') {
+      stationIndex = (stationIndex - 1 + stationCount) % stationCount;
+    }
+    frequency = stationFrequencies[stationIndex];
+    displayStationInfo();
+  }
+}
+
+void setStation() {
+  if (stationCount > 0) {
+    radio.setFrequency(stationFrequencies[stationIndex]);
+    displayStationInfo();
+    M5Cardputer.Display.setCursor(0, 120);
+    M5Cardputer.Display.fillRect(0, 120, 320, 20, BLACK);
+
+    if (currentMode == SAVED) {
+      M5Cardputer.Display.print(stationNames[stationIndex]);
+    }
+  }
+}
+
+void displayStationInfo() {
+  M5Cardputer.Display.fillRect(0, 20, 320, 200, BLACK);
+  M5Cardputer.Display.setCursor(0, 20);
+  M5Cardputer.Display.printf("%d/%d  ", stationIndex + 1, stationCount);
+
+  if (displaySignalStrength) {
+    short signalLevel = radio.getSignalLevel();
+    int signalPercentage = (signalLevel * 100) / 15;
+
+    if (signalPercentage < 60) {
+      M5Cardputer.Display.setTextColor(YELLOW);
+    } else {
+      M5Cardputer.Display.setTextColor(GREEN);
+    }
+    M5Cardputer.Display.printf("Sig:%d%%  ", signalPercentage);
+  }
+
+  if (displayStereoStatus) {
+    if (radio.isStereo()) {
+      M5Cardputer.Display.setTextColor(GREEN);
+      M5Cardputer.Display.print("Ster");
+    } else {
+      M5Cardputer.Display.setTextColor(WHITE);
+      M5Cardputer.Display.print("Mono");
+    }
+  }
+
+  M5Cardputer.Display.setTextColor(WHITE);
+  M5Cardputer.Display.setCursor(0, 50);
+  M5Cardputer.Display.setTextSize(3);
+  M5Cardputer.Display.print("Freq:");
+
+  M5Cardputer.Display.setCursor(0, 80);
+  M5Cardputer.Display.printf("%.2f MHz", frequency);
+
+  M5Cardputer.Display.setTextSize(2);
+  M5Cardputer.Display.setCursor(0, 120);
+  M5Cardputer.Display.fillRect(0, 120, 320, 20, BLACK);
+  if (currentMode == SAVED) {
+    M5Cardputer.Display.print(stationNames[stationIndex]);
+  }
+  M5Cardputer.Display.setTextColor(WHITE);
+}
+
+
