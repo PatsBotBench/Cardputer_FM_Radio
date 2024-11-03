@@ -1,6 +1,6 @@
 /*
  * FM Radio Controller for M5Cardputer
- * Author: [Your Name or GitHub Username]
+ * Author: PatsBotBench
  * License: MIT
  * 
  * This software is provided "as is," without any warranty, express or implied.
