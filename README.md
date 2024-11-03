@@ -1,4 +1,3 @@
-M5 Cardputer FM Radio
 This program allows the M5Cardputer to control a TEA5767 FM receiver over I2C, providing on-screen frequency display, signal strength, and mono/stereo indicators. The user can navigate through scanned stations, switch to saved stations, and fine-tune the frequency. Output of the TEA5767 radio module can be sent to a powered/amplified speaker or headphones.
 
 Essentials:
