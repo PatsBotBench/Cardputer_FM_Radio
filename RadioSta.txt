@@ -1,10 +1,10 @@
-97.50
-96.10
-91.50
-94.70
-101.50
-102.90
-98.30
-104.70
-93.90
-105.10
+97.5,WQOK: Hip-Hop
+96.1,WBBB: Adult
+91.5,WUNC: Public
+94.7,WQDR: Country
+101.5,WRAL: Adult
+102.9,WKIX: Classic
+98.3,WQDR-AM: CRock
+104.7,WPLW: Top40
+93.9,WNCB: Country
+105.1,WDCG: Top40
