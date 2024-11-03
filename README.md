@@ -1,7 +1,9 @@
 M5 Cardputer FM Radio
 This program allows the M5Cardputer to control a TEA5767 FM receiver over I2C, providing on-screen frequency display, signal strength, and mono/stereo indicators. The user can navigate through scanned stations, switch to saved stations, and fine-tune the frequency. Output of the TEA5767 radio module can be sent to a powered/amplified speaker or headphones.
 
-Essentials
+Essentials:
+Modify your Radio preferences in the INO file and stations in the RadioSta.Txt file. Compile the INO file & load directly or to to a Bin & use Launcher.
+TEA5767 Housing STL file can be found here: https://www.thingiverse.com/thing:2796647
 
 The user can navigate through scanned stations, switch to saved stations, and fine-tune the frequency. Saved stations are kept in a file on the TF card called RadioSta.TXT. The file is required for intended operations.
 
