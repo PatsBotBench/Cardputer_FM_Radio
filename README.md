@@ -1,9 +1,9 @@
 This program allows the M5Cardputer to control a TEA5767 FM receiver over I2C, providing on-screen frequency display, signal strength, and mono/stereo indicators. The user can navigate through scanned stations, switch to saved stations, and fine-tune the frequency. Output of the TEA5767 radio module can be sent to a powered/amplified speaker or headphones. Saved stations are kept in a file on the SD card called RadioSta.TXT. The file is required for intended operations.
 
 Essentials:
-Modify your Radio preferences in the INO file and stations in the RadioSta.Txt file. Compile the INO file & load directly or to a Bin & use Launcher on Cardputer. Copy RadioSta.txt to the root directory of the SD card.
+Modify your Radio preferences in the INO file and stations in the RadioSta.Txt file. Compile the INO file & load directly or to a Bin & use Launcher on Cardputer. Copy RadioSta.txt to the root directory of the SD card.  
 TEA5767 Housing STL file can be found here: https://www.thingiverse.com/thing:2796647 
-M5 Tape if you don't alreay have it!, can be found here: https://shop.m5stack.com/products/customized-m5stack-logo-adhesive-tape-buy-5-get-6?srsltid=AfmBOooPrlgnYh5shGglB8DBJKRUAlDXSjpoOiPFOAdObK3x-UXRVYGH
+M5 Tape if you don't already have it!, can be found here: https://shop.m5stack.com/products/customized-m5stack-logo-adhesive-tape-buy-5-get-6?srsltid=AfmBOooPrlgnYh5shGglB8DBJKRUAlDXSjpoOiPFOAdObK3x-UXRVYGH
 
 Pin Mapping:
 I2C Configuration: The TEA5767 module is connected to the M5Cardputer via the Grove port.
