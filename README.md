@@ -30,3 +30,4 @@ Futures:
 2) Use Wifi and also display time and/or Weather.
 
 
+Recognizing life, the author will try to address major issues, but know the author is not committed to providing support, updates, or bug fixes for this software. Users assume all responsibility for any issues arising from using or modifying this software.
