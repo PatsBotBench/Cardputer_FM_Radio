@@ -12,13 +12,13 @@ SDA: G2
 SCL: G1
 
 Key Functions:
-m: Cycle between modes (Scanned Stations and Saved Stations).
-/: Tune to the next saved or scanned station up the frequency band.
-,: Tune to the previous saved or scanned station down the frequency band.
-OK/Enter (LF key): Confirm selection of the new station after using tune keys
-.: Fine-tune the frequency down by 0.1 MHz.
-;: Fine-tune the frequency up by 0.1 MHz.
-s: Rescan frequencies in Scanned Stations mode (ignored in Saved Stations mode).
+m: Cycle between modes (Scanned Stations and Saved Stations).  
+/: Tune to the next saved or scanned station up the frequency band.  
+,: Tune to the previous saved or scanned station down the frequency band.  
+OK/Enter (LF key): Confirm selection of the new station after using tune keys  
+.: Fine-tune the frequency down by 0.1 MHz.  
+;: Fine-tune the frequency up by 0.1 MHz.  
+s: Rescan frequencies in Scanned Stations mode (ignored in Saved Stations mode).  
 
 Display Indicators:
 Signal Strength: Displays the signal strength as a percentage, colored yellow for < 60% and green for ≥ 60%.
