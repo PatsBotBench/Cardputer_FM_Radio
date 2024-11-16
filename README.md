@@ -11,6 +11,7 @@ I2C Configuration: The TEA5767 module is connected to the M5Cardputer via the Gr
 Pin Assignments:
 SDA: G2
 SCL: G1
+V & G as indicated
 
 Key Functions:
 m: Cycle between modes (Scanned Stations and Saved Stations).  
