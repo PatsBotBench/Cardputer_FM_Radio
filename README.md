@@ -8,10 +8,7 @@ M5 Tape if you don't already have it!, can be found here: https://shop.m5stack.c
 
 ## Versions
 
-This repository contains a single sketch & Binary for:
-
-- **M5Cardputer Advanced**
-- **M5Cardputer**
+This repository contains an updated sketch & Binary for the **M5Cardputer Advanced** & - **M5Cardputer** as well as the original sketch built for only the **M5Cardputer**.
 
 
 ## Main Features
@@ -19,15 +16,15 @@ This repository contains a single sketch & Binary for:
 - Control a TEA5767 FM receiver over I2C.
 - Scan the FM band for stations using signal strength.
 - Navigate scanned stations or saved stations.
-- Save the current frequency directly to the SD card.
-- Delete the current saved station from the SD card.
-- Prevent duplicate saved-station entries.
-- Manually enter a frequency using the keyboard.
-- Fine tune up/down by 0.1 MHz with band-edge wrapping.
-- Toggle mute.
-- Toggle forced mono for weak/noisy stereo stations.
-- Display saved station names when the current frequency matches a saved entry.
-- Show temporary interaction messages such as `Saved`, `Deleted`, `Already saved`, and `Out of band`.
+- Save the current frequency directly to the SD card. (New)
+- Delete the current saved station from the SD card. (New)
+- Prevent duplicate saved-station entries. (New)
+- Manually enter a frequency using the keyboard. (New)
+- Fine tune up/down by 0.1 MHz with band-edge wrapping. (New)
+- Toggle mute. (New)
+- Toggle forced mono for weak/noisy stereo stations. (New)
+- Display saved station names when the current frequency matches a saved entry. (New)
+- Show temporary interaction messages such as `Saved`, `Deleted`, `Already saved`, and `Out of band`. (New)
 - Store saved stations on the SD card in `RadioSta.txt`.
 
 ## SD Card Station File
